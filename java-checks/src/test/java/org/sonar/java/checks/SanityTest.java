@@ -132,7 +132,7 @@ class SanityTest {
       .filter(SanityTest::isTypeResolutionError)
       .collect(Collectors.toList());
 
-    assertThat(errorLogs).hasSize(28);
+    assertThat(errorLogs).hasSize(30);
 
     List<LogAndArguments> remainingErrors = new ArrayList<>(errorLogs);
     remainingErrors.removeAll(parsingErrors);
@@ -140,7 +140,7 @@ class SanityTest {
     assertThat(remainingErrors).isEmpty();
 
     assertThat(typeResolutionErrors)
-      .hasSize(16)
+      .hasSize(18)
       .map(LogAndArguments::getFormattedMsg)
       .map(log -> log.substring("ECJ Unable to resolve type ".length()))
       // FIXME investigate root cause (seems to be a conflict of version, with classes from JDK not resolved correctly
@@ -148,6 +148,8 @@ class SanityTest {
         "javax.servlet.http.Cookie",
         "javax.validation.ConstraintValidator",
         "javax.ws.rs.core.Cookie",
+        "jakarta.ws.rs.core.Cookie",
+        "jakarta.servlet.http.Cookie",
         "javax.ws.rs.core.NewCookie",
         "junit.framework.TestCase",
         "org.apache.commons.lang.math.RandomUtils",
@@ -305,7 +307,7 @@ class SanityTest {
       .setProperty(SonarComponents.FAIL_ON_EXCEPTION_KEY, true)
       .setProperty(SonarComponents.SONAR_BATCH_MODE_KEY, true));
     DefaultFileSystem fileSystem = context.fileSystem();
-    SonarComponents sonarComponents = new SonarComponents(null, fileSystem, null, null, null) {
+    SonarComponents sonarComponents = new SonarComponents(null, fileSystem, null, null, null, null) {
       @Override
       public boolean reportAnalysisError(RecognitionException re, InputFile inputFile) {
         return false;

@@ -26,20 +26,19 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.LongSupplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.slf4j.Logger;
@@ -50,6 +49,7 @@ import org.sonar.api.batch.bootstrap.ProjectDefinition;
 import org.sonar.api.batch.fs.FileSystem;
 import org.sonar.api.batch.fs.InputComponent;
 import org.sonar.api.batch.fs.InputFile;
+import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.rule.CheckFactory;
 import org.sonar.api.batch.rule.Checks;
 import org.sonar.api.batch.sensor.SensorContext;
@@ -78,7 +78,7 @@ import org.sonarsource.sonarlint.plugin.api.SonarLintRuntime;
 
 @ScannerSide
 @SonarLintSide
-public class SonarComponents {
+public class SonarComponents extends CheckRegistrar.RegistrarContext {
 
   private static final Logger LOG = LoggerFactory.getLogger(SonarComponents.class);
   private static final int LOGGED_MAX_NUMBER_UNDEFINED_TYPES = 50;
@@ -105,9 +105,10 @@ public class SonarComponents {
 
   private final ClasspathForMain javaClasspath;
   private final ClasspathForTest javaTestClasspath;
-  private final Set<JProblem> undefinedTypes = new HashSet<>();
+  private final Map<JProblem, List<String>> problemsToFilePaths = new HashMap<>();
 
   private final CheckFactory checkFactory;
+  private final ActiveRules activeRules;
   @Nullable
   private final ProjectDefinition projectDefinition;
   private final FileSystem fs;
@@ -117,13 +118,14 @@ public class SonarComponents {
   private final List<Checks<JavaCheck>> allChecks;
   private SensorContext context;
   private UnaryOperator<List<JavaCheck>> checkFilter = UnaryOperator.identity();
+  private final Set<RuleKey> additionalAutoScanCompatibleRuleKeys;
 
   private boolean alreadyLoggedSkipStatus = false;
 
   public SonarComponents(FileLinesContextFactory fileLinesContextFactory, FileSystem fs,
                          ClasspathForMain javaClasspath, ClasspathForTest javaTestClasspath,
-                         CheckFactory checkFactory) {
-    this(fileLinesContextFactory, fs, javaClasspath, javaTestClasspath, checkFactory, null, null);
+                         CheckFactory checkFactory, ActiveRules activeRules) {
+    this(fileLinesContextFactory, fs, javaClasspath, javaTestClasspath, checkFactory, activeRules, null, null);
   }
 
   /**
@@ -131,8 +133,8 @@ public class SonarComponents {
    */
   public SonarComponents(FileLinesContextFactory fileLinesContextFactory, FileSystem fs,
                          ClasspathForMain javaClasspath, ClasspathForTest javaTestClasspath, CheckFactory checkFactory,
-                         @Nullable CheckRegistrar[] checkRegistrars) {
-    this(fileLinesContextFactory, fs, javaClasspath, javaTestClasspath, checkFactory, checkRegistrars, null);
+                         ActiveRules activeRules, @Nullable CheckRegistrar[] checkRegistrars) {
+    this(fileLinesContextFactory, fs, javaClasspath, javaTestClasspath, checkFactory, activeRules, checkRegistrars, null);
   }
 
   /**
@@ -140,8 +142,8 @@ public class SonarComponents {
    */
   public SonarComponents(FileLinesContextFactory fileLinesContextFactory, FileSystem fs,
                          ClasspathForMain javaClasspath, ClasspathForTest javaTestClasspath, CheckFactory checkFactory,
-                         @Nullable ProjectDefinition projectDefinition) {
-    this(fileLinesContextFactory, fs, javaClasspath, javaTestClasspath, checkFactory, null, projectDefinition);
+                         ActiveRules activeRules, @Nullable ProjectDefinition projectDefinition) {
+    this(fileLinesContextFactory, fs, javaClasspath, javaTestClasspath, checkFactory, activeRules,null, projectDefinition);
   }
 
   /**
@@ -149,33 +151,25 @@ public class SonarComponents {
    */
   public SonarComponents(FileLinesContextFactory fileLinesContextFactory, FileSystem fs,
                          ClasspathForMain javaClasspath, ClasspathForTest javaTestClasspath, CheckFactory checkFactory,
-                         @Nullable CheckRegistrar[] checkRegistrars, @Nullable ProjectDefinition projectDefinition) {
+                         ActiveRules activeRules, @Nullable CheckRegistrar[] checkRegistrars,
+                         @Nullable ProjectDefinition projectDefinition) {
     this.fileLinesContextFactory = fileLinesContextFactory;
     this.fs = fs;
     this.javaClasspath = javaClasspath;
     this.javaTestClasspath = javaTestClasspath;
     this.checkFactory = checkFactory;
+    this.activeRules = activeRules;
     this.projectDefinition = projectDefinition;
     this.mainChecks = new ArrayList<>();
     this.testChecks = new ArrayList<>();
     this.jspChecks = new ArrayList<>();
     this.allChecks = new ArrayList<>();
+    this.additionalAutoScanCompatibleRuleKeys = new TreeSet<>();
     if (checkRegistrars != null) {
-      CheckRegistrar.RegistrarContext registrarContext = new CheckRegistrar.RegistrarContext();
-      for (CheckRegistrar checkClassesRegister : checkRegistrars) {
-        checkClassesRegister.register(registrarContext);
-        List<Class<? extends JavaCheck>> checkClasses = getChecks(registrarContext.checkClasses());
-        List<Class<? extends JavaCheck>> testCheckClasses = getChecks(registrarContext.testCheckClasses());
-        registerMainCheckClasses(registrarContext.repositoryKey(), checkClasses);
-        registerTestCheckClasses(registrarContext.repositoryKey(), testCheckClasses);
+      for (CheckRegistrar registrar : checkRegistrars) {
+        registrar.register(this);
       }
     }
-  }
-
-  private static List<Class<? extends JavaCheck>> getChecks(@Nullable Iterable<Class<? extends JavaCheck>> iterable) {
-    return iterable != null ?
-      StreamSupport.stream(iterable.spliterator(), false).collect(Collectors.toList()) :
-      Collections.emptyList();
   }
 
   public void setSensorContext(SensorContext context) {
@@ -234,21 +228,55 @@ public class SonarComponents {
     }
   }
 
-  public void registerMainCheckClasses(String repositoryKey, Iterable<Class<? extends JavaCheck>> checkClasses) {
-    registerCheckClasses(mainChecks, repositoryKey, checkClasses);
+  @Override
+  public void registerMainChecks(String repositoryKey, Collection<?> javaCheckClassesAndInstances) {
+    registerCheckClasses(mainChecks, repositoryKey, javaCheckClassesAndInstances);
   }
 
-  public void registerTestCheckClasses(String repositoryKey, Iterable<Class<? extends JavaCheck>> checkClasses) {
-    registerCheckClasses(testChecks, repositoryKey, checkClasses);
+  @Override
+  public void registerTestChecks(String repositoryKey, Collection<?> javaCheckClassesAndInstances) {
+    registerCheckClasses(testChecks, repositoryKey, javaCheckClassesAndInstances);
   }
 
-  private void registerCheckClasses(List<JavaCheck> destinationList, String repositoryKey, Iterable<Class<? extends JavaCheck>> checkClasses) {
-    Checks<JavaCheck> createdChecks = checkFactory.<JavaCheck>create(repositoryKey).addAnnotatedChecks(checkClasses);
+  @Override
+  public void registerMainSharedCheck(JavaCheck check, Collection<RuleKey> ruleKeys) {
+    if (hasAtLeastOneActiveRule(ruleKeys)) {
+      mainChecks.add(check);
+    }
+  }
+
+  @Override
+  public void registerTestSharedCheck(JavaCheck check, Collection<RuleKey> ruleKeys) {
+    if (hasAtLeastOneActiveRule(ruleKeys)) {
+      testChecks.add(check);
+    }
+  }
+
+  @Override
+  public void registerAutoScanCompatibleRules(Collection<RuleKey> ruleKeys) {
+    additionalAutoScanCompatibleRuleKeys.addAll(ruleKeys);
+  }
+
+  public Set<RuleKey> getAdditionalAutoScanCompatibleRuleKeys() {
+    return additionalAutoScanCompatibleRuleKeys;
+  }
+
+  private boolean hasAtLeastOneActiveRule(Collection<RuleKey> ruleKeys) {
+    return ruleKeys.stream().anyMatch(ruleKey -> activeRules.find(ruleKey) != null);
+  }
+
+
+  private void registerCheckClasses(List<JavaCheck> destinationList, String repositoryKey, Collection<?> javaCheckClassesAndInstances) {
+    Checks<JavaCheck> createdChecks = checkFactory.<JavaCheck>create(repositoryKey).addAnnotatedChecks(javaCheckClassesAndInstances);
     allChecks.add(createdChecks);
     Map<Class<? extends JavaCheck>, Integer> classIndexes = new HashMap<>();
     int i = 0;
-    for (Class<? extends JavaCheck> checkClass : checkClasses) {
-      classIndexes.put(checkClass, i);
+    for (Object javaCheckClassOrInstance : javaCheckClassesAndInstances) {
+      if (javaCheckClassOrInstance instanceof Class) {
+        classIndexes.put((Class<? extends JavaCheck>) javaCheckClassOrInstance, i);
+      } else {
+        classIndexes.put(((JavaCheck) javaCheckClassOrInstance).getClass(), i);
+      }
       i++;
     }
     List<? extends JavaCheck> orderedChecks = createdChecks.all().stream()
@@ -494,67 +522,76 @@ public class SonarComponents {
     return context.project();
   }
 
-  public void collectUndefinedTypes(Set<JProblem> undefinedTypes) {
-    this.undefinedTypes.addAll(undefinedTypes);
+  public void collectUndefinedTypes(String pathToFile, Set<JProblem> undefinedTypes) {
+    undefinedTypes.stream().forEach(problem -> {
+      List<String> filesAffectedByProblem = problemsToFilePaths.computeIfAbsent(problem, key -> new ArrayList<>());
+      filesAffectedByProblem.add(pathToFile);
+    });
   }
 
   public void logUndefinedTypes() {
-    if (!undefinedTypes.isEmpty()) {
-      javaClasspath.logSuspiciousEmptyLibraries();
-      if (!isAutoScan()) {
-        // In autoscan, test + main code are analyzed in the same batch, and we do not make the distinction between
-        // test and main libraries, everything is inside "sonar.java.libraries", it is expected to let the test property empty.
-        javaTestClasspath.logSuspiciousEmptyLibraries();
-      }
-      logUndefinedTypes(LOGGED_MAX_NUMBER_UNDEFINED_TYPES);
-
-      // clear the set so only new undefined types will be logged
-      undefinedTypes.clear();
+    if (problemsToFilePaths.isEmpty()) {
+      return;
     }
+    javaClasspath.logSuspiciousEmptyLibraries();
+    if (!isAutoScan()) {
+      // In autoscan, test + main code are analyzed in the same batch, and we do not make the distinction between
+      // test and main libraries, everything is inside "sonar.java.libraries", it is expected to let the test property empty.
+      javaTestClasspath.logSuspiciousEmptyLibraries();
+    }
+    logUndefinedTypes(LOGGED_MAX_NUMBER_UNDEFINED_TYPES);
+
+    // clear the set so only new undefined types will be logged
+    problemsToFilePaths.clear();
   }
 
   private void logUndefinedTypes(int maxLines) {
     logParserMessages(
-      undefinedTypes.stream()
-        .filter(m -> m.type() == JProblem.Type.UNDEFINED_TYPE),
+      problemsToFilePaths.entrySet().stream()
+        .filter(entry -> entry.getKey().type() == JProblem.Type.UNDEFINED_TYPE),
       maxLines,
       "Unresolved imports/types have been detected during analysis. Enable DEBUG mode to see them.",
       "Unresolved imports/types:"
     );
     logParserMessages(
-      undefinedTypes.stream()
-        .filter(m -> m.type() == JProblem.Type.PREVIEW_FEATURE_USED),
+      problemsToFilePaths.entrySet().stream()
+        .filter(entry -> entry.getKey().type() == JProblem.Type.PREVIEW_FEATURE_USED),
       maxLines,
       "Use of preview features have been detected during analysis. Enable DEBUG mode to see them.",
       "Use of preview features:"
     );
   }
 
-  private static void logParserMessages(Stream<JProblem> messages, int maxLines, String warningMessage, String debugMessage) {
-    final List<String> messagesList = messages
-      .map(Object::toString)
-      .sorted()
+  private static void logParserMessages(Stream<Map.Entry<JProblem, List<String>>> messages, int maxProblems, String warningMessage, String debugMessage) {
+    String problemDelimiter = System.lineSeparator() + "- ";
+    List<List<String>> messagesList = messages
+      .sorted(Comparator.comparing(entry -> entry.getKey().toString()))
+      // We only consider the first `maxProblems` elements. We keep an extra one to know if we passed the threshold in later tests.
+      .limit(maxProblems + 1L)
+      .map(entry -> {
+        List<String> paths = entry.getValue();
+        List<String> problemAndPaths = new ArrayList<>(paths.size() + 1);
+        problemAndPaths.add(problemDelimiter + entry.getKey().toString());
+        paths.forEach(path -> problemAndPaths.add("  * " + path));
+        return problemAndPaths;
+      })
       .collect(Collectors.toList());
-    int messagesListSize = messagesList.size();
-    if (messagesListSize == 0) {
+
+    if (messagesList.isEmpty()) {
       return;
     }
-    final boolean moreThanMax = messagesListSize > maxLines;
-
-    if (moreThanMax) {
-      debugMessage += " (Limited to " + maxLines + ")";
-    }
-
-    final String delimiter = System.lineSeparator() + "- ";
-    final String prefix = debugMessage + delimiter;
-    final String suffix = moreThanMax ? (delimiter + "...") : "";
 
     LOG.warn(warningMessage);
     if (LOG.isDebugEnabled()) {
+      boolean moreThanMax = messagesList.size() > maxProblems;
+      String firstLine = moreThanMax ? (debugMessage + " (Limited to " + maxProblems + ")") : debugMessage;
+      String lastLine = moreThanMax ? (System.lineSeparator() + problemDelimiter + "...") : "";
       LOG.debug(messagesList
         .stream()
-        .limit(maxLines)
-        .collect(Collectors.joining(delimiter, prefix, suffix)));
+        .limit(maxProblems)
+        .flatMap(List::stream)
+        .collect(Collectors.joining(System.lineSeparator(), firstLine, lastLine))
+      );
     }
   }
 

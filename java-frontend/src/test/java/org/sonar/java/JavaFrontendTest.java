@@ -43,6 +43,7 @@ import org.sonar.api.SonarEdition;
 import org.sonar.api.SonarQubeSide;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.batch.fs.InputFile;
+import org.sonar.api.batch.rule.ActiveRules;
 import org.sonar.api.batch.rule.CheckFactory;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.batch.sensor.cache.ReadCache;
@@ -624,7 +625,8 @@ class JavaFrontendTest {
     assertTrue(logTester.logs(Level.WARN).stream().anyMatch(l -> l.endsWith("Use of preview features have been detected during analysis. Enable DEBUG mode to see them.")));
     // We should keep this message or we won't have anything actionable in the debug logs to understand the warning
     assertTrue(logTester.logs(Level.DEBUG).stream().anyMatch(l -> l.replace("\r\n", "\n").endsWith("Use of preview features:\n" +
-      "- The Java feature 'Sealed Types' is only available with source level 17 and above")));
+      "- The Java feature 'Sealed Types' is only available with source level 17 and above\n"+
+      "  * Shape.java")));
     assertThat(mainCodeIssueScannerAndFilter.scanFileInvocationCount).isEqualTo(1);
     assertThat(testCodeIssueScannerAndFilter.scanFileInvocationCount).isZero();
   }
@@ -815,7 +817,8 @@ class JavaFrontendTest {
 
     javaClasspath = mock(ClasspathForMain.class);
     javaTestClasspath = mock(ClasspathForTest.class);
-    sonarComponents = new SonarComponents(fileLinesContextFactory, sensorContext.fileSystem(), javaClasspath, javaTestClasspath, mock(CheckFactory.class));
+    sonarComponents = new SonarComponents(fileLinesContextFactory, sensorContext.fileSystem(), javaClasspath, javaTestClasspath,
+      mock(CheckFactory.class), mock(ActiveRules.class));
     sonarComponents.setSensorContext(sensorContext);
     sonarComponents.mainChecks().add(mainCodeIssueScannerAndFilter);
     sonarComponents.testChecks().add(testCodeIssueScannerAndFilter);

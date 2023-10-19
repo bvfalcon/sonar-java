@@ -302,7 +302,7 @@
   {
     "ruleKey": "S1161",
     "hasTruePositives": true,
-    "falseNegatives": 6,
+    "falseNegatives": 7,
     "falsePositives": 0
   },
   {
@@ -338,7 +338,7 @@
   {
     "ruleKey": "S1172",
     "hasTruePositives": true,
-    "falseNegatives": 11,
+    "falseNegatives": 13,
     "falsePositives": 0
   },
   {
@@ -698,7 +698,7 @@
   {
     "ruleKey": "S1874",
     "hasTruePositives": true,
-    "falseNegatives": 89,
+    "falseNegatives": 102,
     "falsePositives": 0
   },
   {
@@ -974,7 +974,7 @@
   {
     "ruleKey": "S2160",
     "hasTruePositives": true,
-    "falseNegatives": 0,
+    "falseNegatives": 1,
     "falsePositives": 0
   },
   {
@@ -1112,7 +1112,7 @@
   {
     "ruleKey": "S2230",
     "hasTruePositives": true,
-    "falseNegatives": 0,
+    "falseNegatives": 15,
     "falsePositives": 0
   },
   {
@@ -1160,7 +1160,7 @@
   {
     "ruleKey": "S2254",
     "hasTruePositives": true,
-    "falseNegatives": 0,
+    "falseNegatives": 1,
     "falsePositives": 0
   },
   {
@@ -1322,7 +1322,7 @@
   {
     "ruleKey": "S2637",
     "hasTruePositives": true,
-    "falseNegatives": 19,
+    "falseNegatives": 21,
     "falsePositives": 0
   },
   {
@@ -1610,7 +1610,7 @@
   {
     "ruleKey": "S3330",
     "hasTruePositives": true,
-    "falseNegatives": 30,
+    "falseNegatives": 51,
     "falsePositives": 0
   },
   {
@@ -2108,7 +2108,7 @@
   {
     "ruleKey": "S5122",
     "hasTruePositives": true,
-    "falseNegatives": 15,
+    "falseNegatives": 18,
     "falsePositives": 0
   },
   {
@@ -2421,7 +2421,7 @@
     "ruleKey": "S5854",
     "hasTruePositives": true,
     "falseNegatives": 3,
-    "falsePositives": 0
+    "falsePositives": 1
   },
   {
     "ruleKey": "S5855",
@@ -2846,7 +2846,7 @@
   {
     "ruleKey": "S6437",
     "hasTruePositives": true,
-    "falseNegatives": 56,
+    "falseNegatives": 57,
     "falsePositives": 0
   },
   {
@@ -2871,6 +2871,36 @@
     "ruleKey": "S6548",
     "hasTruePositives": true,
     "falseNegatives": 0,
+    "falsePositives": 0
+  },
+  {
+    "ruleKey": "S6809",
+    "hasTruePositives": false,
+    "falseNegatives": 94,
+    "falsePositives": 0
+  },
+  {
+    "ruleKey": "S6806",
+    "hasTruePositives": false,
+    "falseNegatives": 10,
+    "falsePositives": 0
+  },
+  {
+    "ruleKey": "S6810",
+    "hasTruePositives": false,
+    "falseNegatives": 6,
+    "falsePositives": 0
+  },
+  {
+    "ruleKey": "S6813",
+    "hasTruePositives": true,
+    "falseNegatives": 32,
+    "falsePositives": 0
+  },
+  {
+    "ruleKey": "S6814",
+    "hasTruePositives": false,
+    "falseNegatives": 5,
     "falsePositives": 0
   }
 ]

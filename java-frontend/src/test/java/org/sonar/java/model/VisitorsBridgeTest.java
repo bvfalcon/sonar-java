@@ -40,7 +40,7 @@ import org.sonar.api.testfixtures.log.LogAndArguments;
 import org.sonar.api.testfixtures.log.LogTesterJUnit5;
 import org.sonar.java.AnalysisException;
 import org.sonar.java.CheckFailureException;
-import org.sonar.java.JavaVersionAwareVisitor;
+import org.sonar.plugins.java.api.JavaVersionAwareVisitor;
 import org.sonar.java.SonarComponents;
 import org.sonar.java.TestUtils;
 import org.sonar.java.ast.visitors.SubscriptionVisitor;
@@ -497,7 +497,7 @@ class VisitorsBridgeTest {
     void scanWithoutParsing_returns_false_when_the_file_is_a_generated_file() throws ApiMismatchException {
       InputFile inputFile = new GeneratedFile(Path.of("non-existing-generated-file.java"));
 
-      SonarComponents sonarComponents = spy(new SonarComponents(null, null, null, null, null));
+      SonarComponents sonarComponents = spy(new SonarComponents(null, null, null, null, null, null));
       SensorContext contextMock = mock(SensorContext.class);
       sonarComponents.setSensorContext(contextMock);
 
@@ -639,7 +639,7 @@ class VisitorsBridgeTest {
     SensorContextTester sensorContextTester = SensorContextTester.create(new File(""));
     sensorContextTester.setSettings(new MapSettings().setProperty(SonarComponents.FAIL_ON_EXCEPTION_KEY, failOnException));
 
-    sonarComponents = new SonarComponents(null, null, null, null, null);
+    sonarComponents = new SonarComponents(null, null, null, null, null, null);
     sonarComponents.setSensorContext(sensorContextTester);
 
     VisitorsBridge visitorsBridge = new VisitorsBridge(visitors, new ArrayList<>(), sonarComponents);

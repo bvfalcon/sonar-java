@@ -135,7 +135,12 @@ import org.sonar.java.checks.serialization.SerializableComparatorCheck;
 import org.sonar.java.checks.serialization.SerializableFieldInSerializableClassCheck;
 import org.sonar.java.checks.serialization.SerializableObjectInSessionCheck;
 import org.sonar.java.checks.serialization.SerializableSuperConstructorCheck;
+import org.sonar.java.checks.spring.AsyncMethodsCalledViaThisCheck;
+import org.sonar.java.checks.spring.AsyncMethodsReturnTypeCheck;
 import org.sonar.java.checks.spring.ControllerWithSessionAttributesCheck;
+import org.sonar.java.checks.spring.ModelAttributeNamingConventionForSpELCheck;
+import org.sonar.java.checks.spring.FieldDependencyInjectionCheck;
+import org.sonar.java.checks.spring.OptionalRestParametersShouldBeObjectsCheck;
 import org.sonar.java.checks.spring.PersistentEntityUsedAsRequestParameterCheck;
 import org.sonar.java.checks.spring.RequestMappingMethodPublicCheck;
 import org.sonar.java.checks.spring.SpringAntMatcherOrderCheck;
@@ -273,6 +278,8 @@ public final class CheckList {
     AssertOnBooleanVariableCheck.class,
     AssertionsInProductionCodeCheck.class,
     AssertsOnParametersOfPublicMethodCheck.class,
+    AsyncMethodsCalledViaThisCheck.class,
+    AsyncMethodsReturnTypeCheck.class,
     AtLeastOneConstructorCheck.class,
     AuthorizationsStrongDecisionsCheck.class,
     AwsConsumerBuilderUsageCheck.class,
@@ -400,6 +407,7 @@ public final class CheckList {
     ExcessiveContentRequestCheck.class,
     ExpressionComplexityCheck.class,
     ExternalizableClassConstructorCheck.class,
+    FieldDependencyInjectionCheck.class,
     FieldModifierCheck.class,
     FileHeaderCheck.class,
     FilePermissionsCheck.class,
@@ -485,6 +493,7 @@ public final class CheckList {
     MissingCurlyBracesCheck.class,
     MissingDeprecatedCheck.class,
     MissingOverridesInRecordWithArrayComponentCheck.class,
+    ModelAttributeNamingConventionForSpELCheck.class,
     ModifiersOrderCheck.class,
     ModulusEqualityCheck.class,
     MultipleWhitespaceCheck.class,
@@ -514,6 +523,7 @@ public final class CheckList {
     OneDeclarationPerLineCheck.class,
     OpenSAML2AuthenticationBypassCheck.class,
     OptionalAsParameterCheck.class,
+    OptionalRestParametersShouldBeObjectsCheck.class,
     OutputStreamOverrideWriteCheck.class,
     OverrideAnnotationCheck.class,
     OverwrittenKeyCheck.class,

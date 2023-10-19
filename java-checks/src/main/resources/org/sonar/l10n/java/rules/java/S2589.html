@@ -2,7 +2,7 @@
 <p>If a boolean expression doesn’t change the evaluation of the condition, then it is entirely unnecessary, and can be removed. If it is gratuitous
 because it does not match the programmer’s intent, then it’s a bug and the expression should be fixed.</p>
 <h3>Noncompliant code example</h3>
-<pre>
+<pre data-diff-id="11" data-diff-type="noncompliant">
 a = true;
 if (a) { // Noncompliant
   doSomething();
@@ -15,9 +15,13 @@ if (b &amp;&amp; a) { // Noncompliant; "a" is always "true"
 if (c || !a) { // Noncompliant; "!a" is always "false"
   doSomething();
 }
+
+if (c || (!c &amp;&amp; b)) { // Noncompliant; c || (!c &amp;&amp; b) is equal to c || b
+  doSomething();
+}
 </pre>
 <h3>Compliant solution</h3>
-<pre>
+<pre data-diff-id="11" data-diff-type="compliant">
 a = true;
 if (foo(a)) {
   doSomething();
@@ -30,8 +34,13 @@ if (b) {
 if (c) {
   doSomething();
 }
+
+if (c || b) {
+  doSomething();
+}
 </pre>
 <h2>Resources</h2>
+<h3>Articles &amp; blog posts</h3>
 <ul>
   <li> <a href="https://cwe.mitre.org/data/definitions/571">MITRE, CWE-571</a> - Expression is Always True </li>
   <li> <a href="https://cwe.mitre.org/data/definitions/570">MITRE, CWE-570</a> - Expression is Always False </li>

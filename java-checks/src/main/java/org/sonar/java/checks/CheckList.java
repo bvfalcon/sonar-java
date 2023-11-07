@@ -136,15 +136,23 @@ import org.sonar.java.checks.serialization.SerializableFieldInSerializableClassC
 import org.sonar.java.checks.serialization.SerializableObjectInSessionCheck;
 import org.sonar.java.checks.serialization.SerializableSuperConstructorCheck;
 import org.sonar.java.checks.spring.AsyncMethodsCalledViaThisCheck;
+import org.sonar.java.checks.spring.AsyncMethodsOnConfigurationClassCheck;
 import org.sonar.java.checks.spring.AsyncMethodsReturnTypeCheck;
+import org.sonar.java.checks.spring.AutowiredOnConstructorWhenMultipleConstructorsCheck;
+import org.sonar.java.checks.spring.AutowiredOnMultipleConstructorsCheck;
+import org.sonar.java.checks.spring.AvoidQualifierOnBeanMethodsCheck;
+import org.sonar.java.checks.spring.ControllerWithRestControllerReplacementCheck;
 import org.sonar.java.checks.spring.ControllerWithSessionAttributesCheck;
-import org.sonar.java.checks.spring.ModelAttributeNamingConventionForSpELCheck;
 import org.sonar.java.checks.spring.FieldDependencyInjectionCheck;
+import org.sonar.java.checks.spring.ModelAttributeNamingConventionForSpELCheck;
+import org.sonar.java.checks.spring.NonSingletonAutowiredInSingletonCheck;
+import org.sonar.java.checks.spring.NullableInjectedFieldsHaveDefaultValueCheck;
 import org.sonar.java.checks.spring.OptionalRestParametersShouldBeObjectsCheck;
 import org.sonar.java.checks.spring.PersistentEntityUsedAsRequestParameterCheck;
 import org.sonar.java.checks.spring.RequestMappingMethodPublicCheck;
 import org.sonar.java.checks.spring.SpringAntMatcherOrderCheck;
 import org.sonar.java.checks.spring.SpringAutoConfigurationCheck;
+import org.sonar.java.checks.spring.SpringBeanNamingConventionCheck;
 import org.sonar.java.checks.spring.SpringBeansShouldBeAccessibleCheck;
 import org.sonar.java.checks.spring.SpringComponentWithNonAutowiredMembersCheck;
 import org.sonar.java.checks.spring.SpringComponentWithWrongScopeCheck;
@@ -156,7 +164,9 @@ import org.sonar.java.checks.spring.SpringRequestMappingMethodCheck;
 import org.sonar.java.checks.spring.SpringScanDefaultPackageCheck;
 import org.sonar.java.checks.spring.SpringSecurityDisableCSRFCheck;
 import org.sonar.java.checks.spring.SpringSessionFixationCheck;
+import org.sonar.java.checks.spring.SuperfluousResponseBodyAnnotationCheck;
 import org.sonar.java.checks.spring.TransactionalMethodVisibilityCheck;
+import org.sonar.java.checks.spring.ValueAnnotationShouldInjectPropertyOrSpELCheck;
 import org.sonar.java.checks.synchronization.DoubleCheckedLockingCheck;
 import org.sonar.java.checks.synchronization.SynchronizationOnGetClassCheck;
 import org.sonar.java.checks.synchronization.TwoLocksWaitCheck;
@@ -279,9 +289,13 @@ public final class CheckList {
     AssertionsInProductionCodeCheck.class,
     AssertsOnParametersOfPublicMethodCheck.class,
     AsyncMethodsCalledViaThisCheck.class,
+    AsyncMethodsOnConfigurationClassCheck.class,
     AsyncMethodsReturnTypeCheck.class,
     AtLeastOneConstructorCheck.class,
     AuthorizationsStrongDecisionsCheck.class,
+    AutowiredOnConstructorWhenMultipleConstructorsCheck.class,
+    AutowiredOnMultipleConstructorsCheck.class,
+    AvoidQualifierOnBeanMethodsCheck.class,
     AwsConsumerBuilderUsageCheck.class,
     AwsCredentialsShouldBeSetExplicitlyCheck.class,
     AwsLambdaSyncCallCheck.class,
@@ -353,6 +367,7 @@ public final class CheckList {
     ConstructorCallingOverridableCheck.class,
     ConstructorInjectionCheck.class,
     ControlCharacterInLiteralCheck.class,
+    ControllerWithRestControllerReplacementCheck.class,
     ControllerWithSessionAttributesCheck.class,
     CookieHttpOnlyCheck.class,
     HardCodedCredentialsShouldNotBeUsedCheck.class,
@@ -503,12 +518,14 @@ public final class CheckList {
     NestedTernaryOperatorsCheck.class,
     NioFileDeleteCheck.class,
     NoCheckstyleTagPresenceCheck.class,
+    NonSingletonAutowiredInSingletonCheck.class,
     NoPmdTagPresenceCheck.class,
     NoSonarCheck.class,
     NonSerializableWriteCheck.class,
     NonShortCircuitLogicCheck.class,
     NonStaticClassInitializerCheck.class,
     NotifyCheck.class,
+    NullableInjectedFieldsHaveDefaultValueCheck.class,
     NullCheckWithInstanceofCheck.class,
     NullReturnedOnComputeIfPresentOrAbsentCheck.class,
     OSCommandsPathCheck.class,
@@ -606,6 +623,7 @@ public final class CheckList {
     SpecializedFunctionalInterfacesCheck.class,
     SpringAntMatcherOrderCheck.class,
     SpringAutoConfigurationCheck.class,
+    SpringBeanNamingConventionCheck.class,
     SpringBeansShouldBeAccessibleCheck.class,
     SpringComponentWithNonAutowiredMembersCheck.class,
     SpringComponentWithWrongScopeCheck.class,
@@ -639,6 +657,7 @@ public final class CheckList {
     StrongCipherAlgorithmCheck.class,
     SubClassStaticReferenceCheck.class,
     SuperfluousCurlyBraceCheck.class,
+    SuperfluousResponseBodyAnnotationCheck.class,
     SuppressWarningsCheck.class,
     SuspiciousListRemoveCheck.class,
     SwitchCaseTooBigCheck.class,
@@ -720,6 +739,7 @@ public final class CheckList {
     UselessParenthesesCheck.class,
     UserEnumerationCheck.class,
     UtilityClassWithPublicConstructorCheck.class,
+    ValueAnnotationShouldInjectPropertyOrSpELCheck.class,
     ValueBasedObjectUsedForLockCheck.class,
     ValueBasedObjectsShouldNotBeSerializedCheck.class,
     VarArgCheck.class,
@@ -938,8 +958,7 @@ public final class CheckList {
     UnusedPrivateFieldCheck.class,
     VerifiedServerHostnamesCheck.class,
     VolatileNonPrimitiveFieldCheck.class,
-    WeakSSLContextCheck.class
-  );
+    WeakSSLContextCheck.class);
 
   private CheckList() {
   }
